@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management System</title>
+    <style>
+        body {
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        h1, h2 {
+            color: #444;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #5cb85c;
+            border: none;
+            padding: 10px 20px;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #4cae4c;
+        }
+
+        .event-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .event-list li {
+            background: #fff;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-list li h3 {
+            margin: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Event Management System</h1>
+        <button onclick="showCreateEventForm()">Create New Event</button>
+        <button onclick="showEventList()">View Upcoming Events</button>
+        <div id="createEventForm" class="hidden">
+            <h2>Create Event</h2>
+            <form id="eventForm">
+                <div class="form-group">
+                    <label for="eventName">Event Name:</label>
+                    <input type="text" id="eventName" name="eventName" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventDate">Event Date:</label>
+                    <input type="date" id="eventDate" name="eventDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventDescription">Event Description:</label>
+                    <textarea id="eventDescription" name="eventDescription" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="eventLocation">Event Location:</label>
+                    <input type="text" id="eventLocation" name="eventLocation" required>
+                </div>
+                <button type="submit">Create Event</button>
+            </form>
+        </div>
+        <div id="eventList" class="hidden">
+            <h2>Upcoming Events</h2>
+            <ul class="event-list" id="events"></ul>
+        </div>
+        <div id="eventDetails" class="hidden">
+            <h2>Event Details</h2>
+            <div id="eventInfo"></div>
+            <h3>Participants</h3>
+            <ul id="participantList"></ul>
+            <h3>Register for Event</h3>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="participantName">Name:</label>
+                    <input type="text" id="participantName" name="participantName" required>
+                </div>
+                <div class="form-group">
+                    <label for="participantEmail">Email:</label>
+                    <input type="email" id="participantEmail" name="participantEmail" required>
+                </div>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const eventForm = document.getElementById("eventForm");
+            const registrationForm = document.getElementById("registrationForm");
+            const eventsContainer = document.getElementById("events");
+            const eventDetails = document.getElementById("eventDetails");
+            const participantList = document.getElementById("participantList");
+            let events = JSON.parse(localStorage.getItem('events')) || [];
+            let selectedEvent = null;
+
+            eventForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const newEvent = {
+                    id: Date.now(),
+                    name: eventForm.eventName.value,
+                    date: eventForm.eventDate.value,
+                    description: eventForm.eventDescription.value,
+                    location: eventForm.eventLocation.value,
+                    participants: []
+                };
+                events.push(newEvent);
+                localStorage.setItem('events', JSON.stringify(events));
+                alert("Event created successfully!");
+                eventForm.reset();
+                showEventList();
+            });
+
+            registrationForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const newParticipant = {
+                    name: registrationForm.participantName.value,
+                    email: registrationForm.participantEmail.value
+                };
+                selectedEvent.participants.push(newParticipant);
+                localStorage.setItem('events', JSON.stringify(events));
+                registrationForm.reset();
+                showEventDetails(selectedEvent.id);
+            });
+
+            function showCreateEventForm() {
+                document.getElementById("createEventForm").classList.remove("hidden");
+                document.getElementById("eventList").classList.add("hidden");
+                eventDetails.classList.add("hidden");
+            }
+
+            function showEventList() {
+                document.getElementById("createEventForm").classList.add("hidden");
+                document.getElementById("eventList").classList.remove("hidden");
+                eventDetails.classList.add("hidden");
+                displayEvents();
+            }
+
+            function showEventDetails(eventId) {
+                selectedEvent = events.find(event => event.id === eventId);
+                document.getElementById("createEventForm").classList.add("hidden");
+                document.getElementById("eventList").classList.add("hidden");
+                eventDetails.classList.remove("hidden");
+                document.getElementById("eventInfo").innerHTML = `
+                    <h3>${selectedEvent.name}</h3>
+                    <p>${selectedEvent.date}</p>
+                    <p>${selectedEvent.description}</p>
+                    <p>${selectedEvent.location}</p>
+                `;
+                displayParticipants(selectedEvent.participants);
+            }
+
+            function displayEvents() {
+                eventsContainer.innerHTML = "";
+                events.forEach(event => {
+                    const eventItem = document.createElement("li");
+                    eventItem.innerHTML = `
+                        <h3>${event.name}</h3>
+                        <p>${event.date}</p>
+                        <button onclick="showEventDetails(${event.id})">View Details</button>
+                    `;
+                    eventsContainer.appendChild(eventItem);
+                });
+            }
+
+            function displayParticipants(participants) {
+                participantList.innerHTML = "";
+                participants.forEach(participant => {
+                    const participantItem = document.createElement("li");
+                    participantItem.textContent = `${participant.name} (${participant.email})`;
+                    participantList.appendChild(participantItem);
+                });
+            }
+
+            window.showCreateEventForm = showCreateEventForm;
+            window.showEventList = showEventList;
+            window.showEventDetails = showEventDetails;
+        });
+    </script>
+</body>
+</html>
